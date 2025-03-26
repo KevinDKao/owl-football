@@ -1,0 +1,81 @@
+Model,Feature,Importance
+Random Forest,weight,0.745710964413218
+Random Forest,preDraftGrade,0.1682517071024018
+Random Forest,preDraftRanking,0.0261937713568508
+Random Forest,preDraftPositionRanking,0.0153932370025152
+Random Forest,height,0.0063972503325217
+Random Forest,receiving_YPR,0.0025496529191807
+Random Forest,interceptions_AVG,0.0023139136261556
+Random Forest,receiving_YDS,0.0022550654561216
+Random Forest,receiving_LONG,0.0021115096222852
+Random Forest,interceptions_INT,0.0020863358473744
+Random Forest,defensive_TOT,0.0020392348706408
+Random Forest,interceptions_YDS,0.0018871858913539
+Random Forest,defensive_SOLO,0.0017686618023927
+Random Forest,rushing_YDS,0.0017018725308737
+Random Forest,rushing_YPC,0.0014910196209938
+Random Forest,receiving_REC,0.0011638553829818
+Random Forest,defensive_PD,0.0010896666112873
+Random Forest,puntReturns_YDS,0.0009929962158384
+Random Forest,defensive_TFL,0.0009834587430452
+Random Forest,rushing_LONG,0.0009161165280805
+Random Forest (No Rating),weight,0.834809815521474
+Random Forest (No Rating),height,0.019978754742085
+Random Forest (No Rating),defensive_TOT,0.0102806921390278
+Random Forest (No Rating),receiving_YPR,0.0089329202404118
+Random Forest (No Rating),interceptions_AVG,0.008890981750702
+Random Forest (No Rating),defensive_SOLO,0.0081431648054871
+Random Forest (No Rating),receiving_YDS,0.0078038178850145
+Random Forest (No Rating),receiving_LONG,0.0075062208974956
+Random Forest (No Rating),interceptions_YDS,0.0074901459746209
+Random Forest (No Rating),interceptions_INT,0.0067411980147481
+Random Forest (No Rating),rushing_YPC,0.0059172542605963
+Random Forest (No Rating),defensive_PD,0.0057177525872499
+Random Forest (No Rating),receiving_REC,0.0048873538690959
+Random Forest (No Rating),defensive_TFL,0.0047048575451107
+Random Forest (No Rating),rushing_YDS,0.0046634167192968
+Random Forest (No Rating),rushing_CAR,0.0043407921719227
+Random Forest (No Rating),defensive_SACKS,0.0039057122189837
+Random Forest (No Rating),rushing_LONG,0.0037491999913798
+Random Forest (No Rating),defensive_QB HUR,0.0033142031883463
+Random Forest (No Rating),receiving_TD,0.0032108769839096
+XGBoost,weight,0.48599514
+XGBoost,preDraftGrade,0.11187966
+XGBoost,height,0.078724824
+XGBoost,preDraftRanking,0.03991157
+XGBoost,preDraftPositionRanking,0.037307527
+XGBoost,kicking_FGA,0.010672697
+XGBoost,punting_LONG,0.010356702
+XGBoost,passing_COMPLETIONS,0.009048887
+XGBoost,puntReturns_YDS,0.00781713
+XGBoost,passing_YDS,0.0078117247
+XGBoost,receiving_YDS,0.0072541307
+XGBoost,defensive_TFL,0.0071111717
+XGBoost,defensive_SACKS,0.006576432
+XGBoost,defensive_QB HUR,0.006491841
+XGBoost,puntReturns_AVG,0.0063392464
+XGBoost,passing_YPA,0.0062933546
+XGBoost,passing_INT,0.006240758
+XGBoost,passing_ATT,0.0060642445
+XGBoost,rushing_YPC,0.0059839305
+XGBoost,interceptions_INT,0.0059742094
+XGBoost (No Rating),weight,0.32550827
+XGBoost (No Rating),height,0.08961407
+XGBoost (No Rating),passing_TD,0.06803123
+XGBoost (No Rating),kicking_FGM,0.023628749
+XGBoost (No Rating),interceptions_INT,0.019239297
+XGBoost (No Rating),passing_INT,0.01880481
+XGBoost (No Rating),passing_PCT,0.016855868
+XGBoost (No Rating),passing_YPA,0.01614412
+XGBoost (No Rating),defensive_TFL,0.015243228
+XGBoost (No Rating),rushing_TD,0.015186964
+XGBoost (No Rating),kicking_PCT,0.014681278
+XGBoost (No Rating),kickReturns_AVG,0.013673563
+XGBoost (No Rating),receiving_TD,0.013311808
+XGBoost (No Rating),puntReturns_NO,0.013306464
+XGBoost (No Rating),receiving_YPR,0.012777633
+XGBoost (No Rating),interceptions_TD,0.012693665
+XGBoost (No Rating),defensive_TOT,0.012327725
+XGBoost (No Rating),kicking_FGA,0.0122616375
+XGBoost (No Rating),defensive_SOLO,0.01202086
+XGBoost (No Rating),rushing_YDS,0.0118371295

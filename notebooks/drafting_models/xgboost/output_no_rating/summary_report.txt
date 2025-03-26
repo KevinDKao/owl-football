@@ -1,0 +1,89 @@
+XGBoost Model for NFL Draft Position Prediction (No Rating Features)
+Generated on: 2025-03-09 10:38:40
+
+Training Data: Years 2011-2020
+Test Data: Years 2021, 2023, 2024
+
+Model Parameters:
+- n_estimators: 100
+- learning_rate: 0.1
+- max_depth: 6
+- subsample: 0.8
+- colsample_bytree: 0.8
+- random_state: 42
+
+Excluded Rating Features:
+- preDraftGrade
+- preDraftRanking
+- preDraftPositionRanking
+
+Top 10 Important Features:
+- weight: 0.3255
+- height: 0.0896
+- passing_TD: 0.0680
+- kicking_FGM: 0.0236
+- interceptions_INT: 0.0192
+- passing_INT: 0.0188
+- passing_PCT: 0.0169
+- passing_YPA: 0.0161
+- defensive_TFL: 0.0152
+- rushing_TD: 0.0152
+
+Performance Metrics:
+
+Year: 2021.0
+- MSE: 182.7827
+- RMSE: 13.5197
+- MAE: 2.1144
+- R2: 0.7419
+
+Drafted/Undrafted Classification Metrics:
+- Actually Drafted Count: 259 (Expected: 255)
+- Predicted Drafted Count: 288 (Expected: 255)
+- Accuracy: 0.9964
+- Precision: 0.8993
+- Recall: 1.0000
+- F1 Score: 0.9470
+- Confusion Matrix:
+  * True Positives (correctly predicted as drafted): 259
+  * False Positives (predicted drafted but actually undrafted): 29
+  * False Negatives (predicted undrafted but actually drafted): 0
+  * True Negatives (correctly predicted as undrafted): 7737
+
+Year: 2023.0
+- MSE: 165.0774
+- RMSE: 12.8482
+- MAE: 1.4359
+- R2: 0.5705
+
+Drafted/Undrafted Classification Metrics:
+- Actually Drafted Count: 259 (Expected: 255)
+- Predicted Drafted Count: 350 (Expected: 255)
+- Accuracy: 0.9906
+- Precision: 0.6686
+- Recall: 0.9035
+- F1 Score: 0.7685
+- Confusion Matrix:
+  * True Positives (correctly predicted as drafted): 234
+  * False Positives (predicted drafted but actually undrafted): 116
+  * False Negatives (predicted undrafted but actually drafted): 25
+  * True Negatives (correctly predicted as undrafted): 14582
+
+Year: 2024.0
+- MSE: 115.4143
+- RMSE: 10.7431
+- MAE: 1.2740
+- R2: 0.7063
+
+Drafted/Undrafted Classification Metrics:
+- Actually Drafted Count: 257 (Expected: 255)
+- Predicted Drafted Count: 335 (Expected: 255)
+- Accuracy: 0.9937
+- Precision: 0.7493
+- Recall: 0.9767
+- F1 Score: 0.8480
+- Confusion Matrix:
+  * True Positives (correctly predicted as drafted): 251
+  * False Positives (predicted drafted but actually undrafted): 84
+  * False Negatives (predicted undrafted but actually drafted): 6
+  * True Negatives (correctly predicted as undrafted): 13946

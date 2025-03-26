@@ -1,0 +1,80 @@
+Random Forest Model for NFL Draft Position Prediction
+Generated on: 2025-03-09 10:43:41
+
+Training Data: Years 2011-2020
+Test Data: Years 2021, 2023, 2024
+
+Model Parameters:
+- n_estimators: 100
+- random_state: 42
+
+Top 10 Important Features:
+- weight: 0.7457
+- preDraftGrade: 0.1683
+- preDraftRanking: 0.0262
+- preDraftPositionRanking: 0.0154
+- height: 0.0064
+- receiving_YPR: 0.0025
+- interceptions_AVG: 0.0023
+- receiving_YDS: 0.0023
+- receiving_LONG: 0.0021
+- interceptions_INT: 0.0021
+
+Performance Metrics:
+
+Year: 2021.0
+- MSE: 70.9310
+- RMSE: 8.4221
+- MAE: 1.1524
+- R2: 0.8998
+
+Drafted/Undrafted Classification Metrics:
+- Actually Drafted Count: 259 (Expected: 255)
+- Predicted Drafted Count: 262 (Expected: 255)
+- Accuracy: 0.9996
+- Precision: 0.9885
+- Recall: 1.0000
+- F1 Score: 0.9942
+- Confusion Matrix:
+  * True Positives (correctly predicted as drafted): 259
+  * False Positives (predicted drafted but actually undrafted): 3
+  * False Negatives (predicted undrafted but actually drafted): 0
+  * True Negatives (correctly predicted as undrafted): 7763
+
+Year: 2023.0
+- MSE: 146.9913
+- RMSE: 12.1240
+- MAE: 1.2787
+- R2: 0.6176
+
+Drafted/Undrafted Classification Metrics:
+- Actually Drafted Count: 259 (Expected: 255)
+- Predicted Drafted Count: 261 (Expected: 255)
+- Accuracy: 0.9972
+- Precision: 0.9157
+- Recall: 0.9228
+- F1 Score: 0.9192
+- Confusion Matrix:
+  * True Positives (correctly predicted as drafted): 239
+  * False Positives (predicted drafted but actually undrafted): 22
+  * False Negatives (predicted undrafted but actually drafted): 20
+  * True Negatives (correctly predicted as undrafted): 14676
+
+Year: 2024.0
+- MSE: 74.5268
+- RMSE: 8.6329
+- MAE: 0.9308
+- R2: 0.8103
+
+Drafted/Undrafted Classification Metrics:
+- Actually Drafted Count: 257 (Expected: 255)
+- Predicted Drafted Count: 272 (Expected: 255)
+- Accuracy: 0.9983
+- Precision: 0.9265
+- Recall: 0.9805
+- F1 Score: 0.9527
+- Confusion Matrix:
+  * True Positives (correctly predicted as drafted): 252
+  * False Positives (predicted drafted but actually undrafted): 20
+  * False Negatives (predicted undrafted but actually drafted): 5
+  * True Negatives (correctly predicted as undrafted): 14010
