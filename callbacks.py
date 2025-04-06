@@ -9,7 +9,11 @@ import os
 import traceback
 from helper import time_machine_compare
 from data import load_data
+import logging
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def register_callbacks(app):
     """
@@ -18,15 +22,37 @@ def register_callbacks(app):
 
     # Load time machine models and data
     try:
+        # Get the absolute path of the directory containing this script
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        
         model_files = {
             'win_loss_model.pkl': None,
             'point_diff_model.pkl': None,
             'team_season_profiles.pkl': None
         }
         
-        for model_file in model_files.keys():
-            with open(model_file, 'rb') as f:
-                model_files[model_file] = pickle.load(f)
+        for model_name in model_files.keys():
+            # Try multiple possible locations for the model files
+            possible_paths = [
+                os.path.join(base_dir, model_name),  # Same directory as script
+                os.path.join(base_dir, '..', model_name),  # Parent directory
+            ]
+            
+            model_loaded = False
+            for path in possible_paths:
+                if os.path.exists(path):
+                    logger.info(f"Loading model from: {path}")
+                    try:
+                        with open(path, 'rb') as f:
+                            model_files[model_name] = pickle.load(f)
+                        model_loaded = True
+                        break
+                    except Exception as e:
+                        logger.error(f"Error loading {model_name} from {path}: {str(e)}")
+                        continue
+            
+            if not model_loaded:
+                raise FileNotFoundError(f"Could not find or load {model_name} in any of the expected locations: {possible_paths}")
                 
         win_loss_model = model_files['win_loss_model.pkl']
         point_diff_model = model_files['point_diff_model.pkl']
@@ -173,7 +199,7 @@ def register_callbacks(app):
     def update_player_cards(position_filter, school_filter, draft_status_filter):
         """Update the player cards based on filters"""
         # Load the draft predictions data
-        df = pd.read_csv("app/cache.csv")
+        df = pd.read_csv("cache.csv")
         
         # Convert height from inches to feet and inches
         def convert_height(height):
