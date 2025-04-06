@@ -42,6 +42,10 @@ def register_callbacks(app):
         win_loss_model = None
         point_diff_model = None
         team_profiles = None
+        return html.Div(
+            f"Error: Time machine models not loaded. Reason: {str(e)}",
+            className="alert alert-danger"
+        )
 
     @app.callback(
         Output("time-machine-results", "children"),
@@ -60,7 +64,7 @@ def register_callbacks(app):
 
         if not all([win_loss_model, point_diff_model, team_profiles]):
             return html.Div(
-                "Error: Time machine models not loaded. Please check the model files.",
+                f"Error: Time machine models not loaded. Reason: {str(e)}",
                 className="alert alert-danger"
             )
 
