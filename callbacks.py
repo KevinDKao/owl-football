@@ -1,9 +1,12 @@
 import pandas as pd
 import plotly.express as px
 import dash
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 import json
+import pickle
+from helper import time_machine_compare
+from data import load_data
 
 
 def register_callbacks(app):
@@ -11,574 +14,255 @@ def register_callbacks(app):
     Register all callback functions for the app
     """
 
+    # Load time machine models and data
+    try:
+        with open('win_loss_model.pkl', 'rb') as f:
+            win_loss_model = pickle.load(f)
+        with open('point_diff_model.pkl', 'rb') as f:
+            point_diff_model = pickle.load(f)
+        with open('team_season_profiles.pkl', 'rb') as f:
+            team_profiles = pickle.load(f)
+    except Exception as e:
+        print(f"Error loading time machine models: {str(e)}")
+        win_loss_model = None
+        point_diff_model = None
+        team_profiles = None
+
     @app.callback(
+        Output("time-machine-results", "children"),
+        [Input("run-time-machine", "n_clicks")],
         [
-            Output("filtered-data", "data"),
-            Output("results-info", "children"),
-            Output("total-prospects", "children"),
-            Output("total-drafted", "children"),
-        ],
-        [Input("apply-filters", "n_clicks"), Input("search-input", "value")],
-        [
-            State("position-filter", "value"),
-            State("school-filter", "value"),
-            State("sort-by", "value"),
-            State("min-height", "value"),
-            State("min-weight", "value"),
-            State("min-forty", "value"),
-            State("min-vertical", "value"),
+            State("team1-input", "value"),
+            State("season1-select", "value"),
+            State("team2-input", "value"),
+            State("season2-select", "value"),
+            State("neutral-site", "value"),
         ],
     )
-    def filter_data(
-        n_clicks,
-        search_term,
-        position,
-        school,
-        sort_by,
-        min_height,
-        min_weight,
-        min_forty,
-        min_vertical,
-    ):
-        # Get the dataframe from the app's data store
-        if not hasattr(app, "df") or app.df is None:
-            return [], "No data available", "0", "0"
+    def run_time_machine(n_clicks, team1, season1, team2, season2, neutral):
+        if not n_clicks or not team1 or not team2:
+            return html.Div("Please enter both teams to compare.")
 
-        filtered_df = app.df.copy()
-
-        if filtered_df.empty:
-            return [], "No data available", "0", "0"
-
-        # Apply position filter
-        if position and position != "All":
-            filtered_df = filtered_df[filtered_df["position_group"] == position]
-
-        # Apply school filter
-        if school and school != "All":
-            filtered_df = filtered_df[filtered_df["school"] == school]
-
-        # Apply min height filter if not "Any"
-        if min_height and min_height != "Any":
-            # Logic to filter by height would go here
-            # This is a simplified approach since height is in a special format
-            pass
-
-        # Apply min weight filter
-        if min_weight:
-            filtered_df = filtered_df[filtered_df["weight_clean"] >= min_weight]
-
-        # Apply 40 yard dash filter (lower is better)
-        if min_forty:
-            # Make sure the filter is clear - we want FASTER (lower) times
-            # Only filter records with valid 40 yard dash times
-            filtered_df = filtered_df[
-                (
-                    filtered_df["40_yard_dash"].notna()
-                    & (filtered_df["40_yard_dash"] <= min_forty)
-                )
-                | (filtered_df["40_yard_dash"].isna())
-            ]
-
-        # Apply vertical jump filter (higher is better)
-        if min_vertical:
-            # Only filter records with valid vertical jump measurements
-            filtered_df = filtered_df[
-                (
-                    filtered_df["vertical"].notna()
-                    & (filtered_df["vertical"] >= min_vertical)
-                )
-                | (filtered_df["vertical"].isna())
-            ]
-
-        # Apply search term
-        if search_term:
-            filtered_df = filtered_df[
-                filtered_df["name"].str.contains(search_term, case=False, na=False)
-            ]
-
-        # Filter to only show players predicted to be drafted in rounds 1-7 (picks 1-224)
-        filtered_df = filtered_df[
-            (filtered_df["PredictedDraftPosition"] > 0)
-            & (filtered_df["PredictedDraftPosition"] <= 224)
-        ]
-
-        # Apply sorting
-        if sort_by:
-            col, direction = sort_by.rsplit("_", 1)
-            ascending = direction == "asc"
-            if col in filtered_df.columns:
-                filtered_df = filtered_df.sort_values(by=col, ascending=ascending)
-        else:
-            # Default sort by predicted draft position (highest picks first)
-            filtered_df = filtered_df.sort_values(
-                by="PredictedDraftPosition", ascending=True, na_position="last"
+        if not all([win_loss_model, point_diff_model, team_profiles]):
+            return html.Div(
+                "Error: Time machine models not loaded. Please check the model files.",
+                className="alert alert-danger"
             )
-
-        # Create results info text with more debug information
-        results_info = f"Found {len(filtered_df)} prospects"
-        if position and position != "All":
-            results_info += f" in {position}"
-        if school and school != "All":
-            results_info += f" from {school}"
-        if len(filtered_df) == 0:
-            results_info += " (Note: Try adjusting your filters)"
-
-        # Calculate total drafted
-        total_drafted = len(filtered_df[filtered_df["PredictedDraftPosition"] > 0])
-
-        return (
-            filtered_df.to_dict("records"),
-            results_info,
-            str(len(filtered_df)),
-            str(total_drafted),
-        )
-
-    @app.callback(
-        [
-            Output("players-container", "children"),
-            Output("current-page", "data"),
-            Output("total-pages", "data"),
-            Output("pagination-display", "children"),
-        ],
-        [
-            Input("filtered-data", "data"),
-            Input("page-prev", "n_clicks"),
-            Input("page-next", "n_clicks"),
-            Input("page-first", "n_clicks"),
-            Input("page-last", "n_clicks"),
-            Input("page-input", "value"),
-        ],
-        [State("current-page", "data")],
-    )
-    def update_players_display(
-        data,
-        prev_clicks,
-        next_clicks,
-        first_clicks,
-        last_clicks,
-        page_input,
-        current_page,
-    ):
-        if not data:
-            return (
-                html.Div("No players match your criteria. Try adjusting your filters."),
-                1,
-                1,
-                html.Div("Page 1 of 1"),
-            )
-
-        # Convert data back to dataframe
-        filtered_df = pd.DataFrame(data)
-
-        # Initialize current_page if None
-        if current_page is None:
-            current_page = 1
-
-        # Determine which button was clicked
-        ctx = dash.callback_context
-        if ctx.triggered:
-            trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-            # Handle navigation buttons
-            if trigger_id == "page-prev" and current_page > 1:
-                current_page -= 1
-            elif trigger_id == "page-next":
-                current_page += 1
-            elif trigger_id == "page-first":
-                current_page = 1
-            elif trigger_id == "page-last":
-                current_page = float("inf")  # Will be adjusted below
-            elif trigger_id == "page-input" and page_input:
-                try:
-                    current_page = int(page_input)
-                except:
-                    pass
-
-        # Determine pagination
-        page_size = 10
-        total_pages = max(1, (len(filtered_df) + page_size - 1) // page_size)
-
-        # Make sure current_page is valid
-        current_page = min(max(1, current_page), total_pages)
-
-        # Get players for current page
-        start_idx = (current_page - 1) * page_size
-        end_idx = min(start_idx + page_size, len(filtered_df))
-        page_data = filtered_df.iloc[start_idx:end_idx]
-
-        # Create player cards
-        player_cards = []
-        for _, player in page_data.iterrows():
-            # Create initials for avatar
-            name_parts = str(player["name"]).split()
-            initials = (
-                "".join([name[0] for name in name_parts[:2]]).upper()
-                if name_parts
-                else "?"
-            )
-
-            # Determine if player is projected to be drafted
-            draft_status = ""
-            draft_badge_class = "badge-custom"
-            if player.get("PredictedDraftPosition", 0) > 0:
-                round_num = (player["PredictedDraftPosition"] // 32) + 1
-                pick_num = player["PredictedDraftPosition"] % 32 or 32
-                draft_status = f"Round {round_num}, Pick {pick_num}"
-
-                # Color-code by round
-                if round_num == 1:
-                    draft_badge_class += " badge-high"
-                elif round_num <= 3:
-                    draft_badge_class += " badge-medium"
-                else:
-                    draft_badge_class += " badge-low"
-            else:
-                draft_status = "Undrafted"
-
-            # Create player card
-            player_card = html.Div(
-                [
-                    # Avatar and basic info
-                    html.Div([html.Div(initials, className="player-avatar")]),
-                    # Player details
-                    html.Div(
-                        [
-                            # Name and basic info
-                            html.H5(player["name"], className="player-name"),
-                            html.P(
-                                [
-                                    f"{player['position_group']} • {player['readable_height']} • {int(player['weight_clean']) if not pd.isna(player.get('weight_clean')) else 'N/A'}lbs"
-                                ],
-                                className="player-position",
-                            ),
-                            html.P(player["school"], className="player-position"),
-                            # Draft position (more prominent)
-                            html.Div(
-                                [
-                                    html.Span(
-                                        draft_status,
-                                        className=draft_badge_class + " fw-bold",
-                                    )
-                                ],
-                                className="mt-2 mb-2",
-                            ),
-                            # Badges
-                            html.Div(
-                                [
-                                    html.Span(
-                                        f"Weight: {int(player['weight_clean']) if not pd.isna(player.get('weight_clean')) else 'N/A'}lbs",
-                                        className="badge-custom",
-                                    ),
-                                    html.Span(
-                                        f"Arms: {player['arm_length']/100}\""
-                                        if not pd.isna(player.get("arm_length"))
-                                        else "",
-                                        className="badge-custom",
-                                    ),
-                                    *[
-                                        html.Span(
-                                            f"40yd: {player['40_yard_dash']}s",
-                                            className="badge-custom",
-                                        )
-                                        if not pd.isna(player.get("40_yard_dash"))
-                                        else None,
-                                        html.Span(
-                                            f"Vert: {player['vertical']}\"",
-                                            className="badge-custom",
-                                        )
-                                        if not pd.isna(player.get("vertical"))
-                                        else None,
-                                    ],
-                                ],
-                                className="mt-2 mb-3",
-                            ),
-                            # Action buttons
-                            html.Div(
-                                [
-                                    dbc.Button(
-                                        "Select",
-                                        id={
-                                            "type": "select-player-btn",
-                                            "index": str(player["name"]),
-                                        },
-                                        color="primary",
-                                        size="sm",
-                                        className="me-2",
-                                    ),
-                                    dbc.Button(
-                                        "View Details",
-                                        id={
-                                            "type": "view-player-btn",
-                                            "index": str(player["name"]),
-                                        },
-                                        color="outline-primary",
-                                        size="sm",
-                                    ),
-                                ],
-                                className="mt-2",
-                            ),
-                        ],
-                        className="ms-3 flex-grow-1",
-                    ),
-                ],
-                className="player-card",
-            )
-
-            player_cards.append(player_card)
-
-        # Create pagination display
-        pagination_display = html.Div(
-            [f"Page {current_page} of {total_pages}"], className="text-center fw-bold"
-        )
-
-        return html.Div(player_cards), current_page, total_pages, pagination_display
-
-    @app.callback(
-        [
-            Output("position-distribution", "figure"),
-            Output("school-distribution", "figure"),
-        ],
-        Input("filtered-data", "data"),
-    )
-    def update_visualizations(data):
-        if not data:
-            # Return empty figures if no data
-            empty_fig = {
-                "data": [],
-                "layout": {
-                    "title": "No data available",
-                    "height": 300,
-                },
-            }
-            return empty_fig, empty_fig
-
-        # Convert data back to dataframe
-        filtered_df = pd.DataFrame(data)
-
-        # Position distribution chart
-        position_counts = filtered_df["position_group"].value_counts().reset_index()
-        position_counts.columns = ["Position", "Count"]
-
-        position_fig = px.bar(
-            position_counts,
-            x="Position",
-            y="Count",
-            color="Count",
-            color_continuous_scale="Blues",
-            title="Players by Position Group",
-            template="plotly_white",
-        )
-
-        position_fig.update_layout(
-            height=400,
-            margin=dict(l=40, r=40, t=50, b=40),
-            coloraxis_showscale=False,
-            xaxis_title="",
-            yaxis_title="Number of Players",
-        )
-
-        # School distribution chart (top 10)
-        school_counts = filtered_df["school"].value_counts().nlargest(10).reset_index()
-        school_counts.columns = ["School", "Count"]
-
-        school_fig = px.bar(
-            school_counts,
-            x="Count",
-            y="School",
-            orientation="h",
-            color="Count",
-            color_continuous_scale="Greens",
-            title="Top 10 Schools by Player Count",
-            template="plotly_white",
-        )
-
-        school_fig.update_layout(
-            height=400,
-            margin=dict(l=40, r=40, t=50, b=40),
-            coloraxis_showscale=False,
-            xaxis_title="Number of Players",
-            yaxis_title="",
-        )
-
-        return position_fig, school_fig
-
-    @app.callback(
-        [
-            Output("comparison-section", "children"),
-            Output("comparison-section", "className"),
-        ],
-        [Input("compare-players-btn", "n_clicks")],
-        [State("selected-players", "data")],
-    )
-    def show_player_comparison(n_clicks, selected_players):
-        if not n_clicks or not selected_players or len(selected_players) < 2:
-            return html.Div(), "d-none"
-
-        # Create comparison table
-        comparison_data = []
-        metrics = [
-            ("Position", "position_group"),
-            ("School", "school"),
-            ("Height", "readable_height"),
-            ("Weight", "weight_clean"),
-            ("40 Yard", "40_yard_dash"),
-            ("Vertical", "vertical"),
-            ("Arm Length", "arm_length"),
-            ("Draft Position", "PredictedDraftPosition"),
-        ]
-
-        # Create table header
-        header_row = [html.Th("Metric")] + [
-            html.Th(player["name"]) for player in selected_players
-        ]
-        comparison_data.append(html.Tr(header_row))
-
-        # Create table rows
-        for metric_name, metric_key in metrics:
-            row_cells = [html.Td(metric_name)]
-
-            # Get values for each player
-            values = []
-            for player in selected_players:
-                value = player.get(metric_key)
-
-                # Format the value based on the metric
-                if metric_key == "weight_clean":
-                    formatted_value = f"{int(value)}lbs" if pd.notna(value) else "N/A"
-                elif metric_key == "40_yard_dash":
-                    formatted_value = f"{value}s" if pd.notna(value) else "N/A"
-                elif metric_key == "vertical":
-                    formatted_value = f'{value}"' if pd.notna(value) else "N/A"
-                elif metric_key == "arm_length":
-                    formatted_value = f'{value/100}"' if pd.notna(value) else "N/A"
-                elif metric_key == "PredictedDraftPosition":
-                    if pd.notna(value) and value > 0:
-                        round_num = (value // 32) + 1
-                        pick_num = value % 32 or 32
-                        formatted_value = f"Round {round_num}, Pick {pick_num}"
-                    else:
-                        formatted_value = "Undrafted"
-                else:
-                    formatted_value = str(value) if pd.notna(value) else "N/A"
-
-                values.append(formatted_value)
-
-            # Add cells to row with highlighting for best values
-            for value in values:
-                row_cells.append(html.Td(value))
-
-            comparison_data.append(html.Tr(row_cells))
-
-        comparison_content = html.Div(
-            [
-                html.H3("Player Comparison", className="mb-4"),
-                dbc.Table(
-                    comparison_data,
-                    bordered=True,
-                    hover=True,
-                    striped=True,
-                    className="comparison-table",
-                ),
-            ],
-            className="mt-4",
-        )
-
-        return comparison_content, ""  # Empty className to show the section
-
-    @app.callback(
-        [
-            Output("selected-players", "data"),
-            Output("selected-players-list", "children"),
-            Output("compare-players-btn", "disabled"),
-        ],
-        [
-            Input(
-                {"type": "select-player-btn", "index": dash.dependencies.ALL},
-                "n_clicks",
-            ),
-            Input(
-                {"type": "remove-selected", "index": dash.dependencies.ALL},
-                "n_clicks",
-            ),
-        ],
-        [State("filtered-data", "data"), State("selected-players", "data")],
-    )
-    def update_selected_players(
-        n_clicks_list, remove_clicks_list, filtered_data, current_selected
-    ):
-        if not current_selected:
-            current_selected = []
-
-        # Determine which button was clicked
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            return current_selected, "No players selected", True
-
-        triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
-        clicked_player = None
 
         try:
-            button_id = json.loads(triggered_id)
-            clicked_player = button_id["index"]
-        except:
-            return current_selected, "Error processing selection", True
-
-        # Check if this is a remove action
-        is_remove = triggered_id.startswith('{"type": "remove-selected"')
-
-        if is_remove:
-            # Remove player if already selected
-            updated_selected = [
-                p for p in current_selected if p["name"] != clicked_player
-            ]
-        else:
-            # Find the player in the filtered data
-            filtered_df = pd.DataFrame(filtered_data)
-            player_data = filtered_df[filtered_df["name"] == clicked_player].to_dict(
-                "records"
+            results = time_machine_compare(
+                team1, season1, team2, season2,
+                team_profiles, win_loss_model, point_diff_model,
+                neutral=neutral
             )
 
-            if not player_data:
-                return current_selected, "Selected player not found", True
+            if 'error' in results:
+                return html.Div(
+                    f"Error: {results['error']}",
+                    className="alert alert-danger"
+                )
 
-            # Add player if not already selected (max 3)
-            player_data = player_data[0]
-            current_names = [p["name"] for p in current_selected]
-
-            if clicked_player in current_names:
-                # Remove player if already selected
-                updated_selected = [
-                    p for p in current_selected if p["name"] != clicked_player
-                ]
-            else:
-                # Add player if not already selected (max 3)
-                if len(current_selected) < 3:
-                    updated_selected = current_selected + [player_data]
-                else:
-                    # Replace the first player if already at max
-                    updated_selected = current_selected[1:] + [player_data]
-
-        # Create the selected players list display
-        selected_display = []
-        for player in updated_selected:
-            # Create the player badge with delete button
-            player_badge = dbc.Badge(
+            # Create the results display
+            return html.Div(
                 [
-                    player["name"],
-                    html.I(
-                        className="fas fa-times ms-2",
-                        id={"type": "remove-selected", "index": player["name"]},
+                    html.H3(f"Time Machine Matchup: {results['team1']} vs {results['team2']}", className="text-center mb-4"),
+                    html.P(f"Location: {results['location']}", className="text-center mb-3"),
+                    
+                    # Predicted Outcome
+                    html.Div(
+                        [
+                            html.H4("Predicted Outcome", className="mb-3"),
+                            html.P(f"Winner: {results['predicted_winner']}"),
+                            html.P(f"Score: {results['predicted_score']}"),
+                            html.P(f"Win Probability: {results['win_probability']:.1%}"),
+                        ],
+                        className="mb-4 p-3 border rounded"
+                    ),
+                    
+                    # Team Comparison
+                    html.Div(
+                        [
+                            html.H4("Team Comparison", className="mb-3"),
+                            dbc.Table(
+                                [
+                                    html.Thead(
+                                        html.Tr(
+                                            [
+                                                html.Th("Stat"),
+                                                html.Th(results['team1']),
+                                                html.Th(results['team2'])
+                                            ]
+                                        )
+                                    ),
+                                    html.Tbody(
+                                        [
+                                            html.Tr(
+                                                [
+                                                    html.Td(stat),
+                                                    html.Td(results['team_comparison'][results['team1']][stat]),
+                                                    html.Td(results['team_comparison'][results['team2']][stat])
+                                                ]
+                                            )
+                                            for stat in results['team_comparison'][results['team1']].keys()
+                                        ]
+                                    )
+                                ],
+                                bordered=True,
+                                hover=True,
+                                className="mb-4"
+                            )
+                        ],
+                        className="mb-4 p-3 border rounded"
+                    ),
+                    
+                    # Matchup Advantages
+                    html.Div(
+                        [
+                            html.H4("Matchup Advantages", className="mb-3"),
+                            dbc.ListGroup(
+                                [
+                                    dbc.ListGroupItem(
+                                        f"{category}: {advantage}"
+                                    )
+                                    for category, advantage in results['matchup_advantages'].items()
+                                ]
+                            )
+                        ],
+                        className="mb-4 p-3 border rounded"
+                    ),
+                    
+                    # Narrative Summary
+                    html.Div(
+                        [
+                            html.H4("Narrative Summary", className="mb-3"),
+                            html.P(results['narrative'])
+                        ],
+                        className="p-3 border rounded"
+                    )
+                ],
+                className="time-machine-results"
+            )
+
+        except Exception as e:
+            return html.Div(
+                f"An error occurred: {str(e)}",
+                className="alert alert-danger"
+            )
+
+    @callback(
+        Output("player-cards-container", "children"),
+        Output("school-filter", "options"),
+        Input("position-filter", "value"),
+        Input("school-filter", "value"),
+        Input("draft-status-filter", "value"),
+    )
+    def update_player_cards(position_filter, school_filter, draft_status_filter):
+        """Update the player cards based on filters"""
+        # Load the draft predictions data
+        df = pd.read_csv("app/cache.csv")
+        
+        # Convert height from inches to feet and inches
+        def convert_height(height):
+            if pd.isna(height):
+                return "N/A"
+            try:
+                # Convert to string and handle decimal point
+                height_str = str(int(height))
+                feet = height_str[:-2]
+                inches = height_str[-2:]
+                return f"{feet}'{inches}\""
+            except:
+                return "N/A"
+        
+        df['readable_height'] = df['HEIGHT'].apply(convert_height)
+        
+        # Apply position filter
+        if position_filter != "all":
+            df = df[df["position_group"] == position_filter]
+        
+        # Apply school filter
+        if school_filter != "all":
+            df = df[df["SCHOOL:"] == school_filter]
+        
+        # Apply draft status filter
+        if draft_status_filter != "all":
+            df = df[df["DraftStatus"] == draft_status_filter]
+        
+        # Sort by draft position (highest to lowest)
+        df = df.sort_values(by="predicted_draft_position", ascending=True)
+        
+        # Create cards for each player
+        cards = []
+        for _, player in df.iterrows():
+            # Calculate draft round based on position
+            draft_round = "Undrafted" if player["predicted_draft_position"] == 0 else f"Round {((player['predicted_draft_position'] - 1) // 32) + 1}"
+            
+            # Format 40 yard dash time
+            forty_time = player['40 Yard Dash'] if pd.notna(player['40 Yard Dash']) else 'N/A'
+            
+            card = dbc.Card(
+                [
+                    dbc.CardHeader(
+                        [
+                            html.H4(f"{player['NAME:']}", className="card-title mb-0"),
+                            html.Small(f"{player['SCHOOL:']}", className="text-muted"),
+                        ],
+                        className="bg-primary text-white",
+                    ),
+                    dbc.CardBody(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Strong("Position: "),
+                                            html.Span(f"{player['position_group']}"),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Strong("Height/Weight: "),
+                                            html.Span(f"{player['readable_height']} / {player['WEIGHT']} lbs"),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Strong("Draft Position: "),
+                                            html.Span(f"{player['predicted_draft_position'] if player['predicted_draft_position'] > 0 else 'Undrafted'}"),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Strong("Draft Round: "),
+                                            html.Span(draft_round),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Strong("40 Yard Dash: "),
+                                            html.Span(forty_time),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                ],
+                                className="player-stats",
+                            ),
+                        ],
+                        className="p-3",
                     ),
                 ],
-                color="primary",
-                className="me-1 mb-2 p-2",
+                className="h-100 shadow-sm",
             )
-            selected_display.append(player_badge)
-
-        if not selected_display:
-            selected_display = "No players selected"
-            compare_disabled = True
-        else:
-            compare_disabled = len(updated_selected) < 2
-
-        return updated_selected, selected_display, compare_disabled
+            cards.append(dbc.Col(card, className="mb-4"))
+        
+        # Update school filter options
+        schools = sorted(df["SCHOOL:"].unique())
+        school_options = [{"label": "All Schools", "value": "all"}] + [
+            {"label": school, "value": school} for school in schools
+        ]
+        
+        return cards, school_options

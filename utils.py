@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+
 # Helper function to convert height from NFL format to readable format
 def convert_height(height_value):
     if pd.isna(height_value):
@@ -77,6 +78,7 @@ last_names = [
     "Wright",
     "Scott",
 ]
+
 
 # Generate more realistic player data
 def generate_mock_player_data():

@@ -25,7 +25,7 @@ app.index_string = """
 <html>
     <head>
         {%metas%}
-        <title>2025 NFL Draft Predictor</title>
+        <title>Owl Football! D2K 2025</title>
         {%favicon%}
         {%css%}
     </head>
@@ -45,14 +45,12 @@ def init_app():
     """
     Initialize the app with data and callbacks
     """
-    # Load and process data
+    # Load and process data for draft predictions
     app.df = load_data()
-
-    # Get positions and schools for filters
     positions, schools = get_positions_and_schools(app.df)
 
     # Set app layout
-    app.layout = create_layout(positions, schools)
+    app.layout = create_layout()
 
     # Register callbacks
     register_callbacks(app)
