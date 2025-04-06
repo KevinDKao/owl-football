@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 import json
 import pickle
 import os
+import traceback
 from helper import time_machine_compare
 from data import load_data
 
@@ -17,9 +18,6 @@ def register_callbacks(app):
 
     # Load time machine models and data
     try:
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        
-        # Check if model files exist
         model_files = {
             'win_loss_model.pkl': None,
             'point_diff_model.pkl': None,
@@ -27,10 +25,7 @@ def register_callbacks(app):
         }
         
         for model_file in model_files.keys():
-            file_path = os.path.join(base_path, model_file)
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"Model file {model_file} not found at {file_path}")
-            with open(file_path, 'rb') as f:
+            with open(model_file, 'rb') as f:
                 model_files[model_file] = pickle.load(f)
                 
         win_loss_model = model_files['win_loss_model.pkl']
@@ -41,6 +36,8 @@ def register_callbacks(app):
         
     except Exception as e:
         print(f"Error loading time machine models: {str(e)}")
+        print("Traceback:")
+        print(traceback.format_exc())
         win_loss_model = None
         point_diff_model = None
         team_profiles = None
