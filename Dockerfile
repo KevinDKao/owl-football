@@ -17,6 +17,9 @@ RUN pip install gunicorn
 # Copy the rest of the application
 COPY . .
 
+# Verify data files are present
+RUN ls -la cache.csv win_loss_model.pkl point_diff_model.pkl team_season_profiles.pkl
+
 # Set default port (or use the one passed via environment)
 ENV PORT=8080
 
