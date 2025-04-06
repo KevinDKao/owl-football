@@ -7,12 +7,9 @@ def load_data():
     """
     Load and preprocess the draft predictions data
     """
-    # Get the absolute path to the data file
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    cache_path = os.path.join(base_dir, "cache.csv")
-    
-    # Load the draft predictions data
-    df = pd.read_csv(cache_path)
+    df = pd.read_csv(
+        "cache.csv"
+    )
 
     # Clean up column names
     df.columns = [col.strip(":") for col in df.columns]
