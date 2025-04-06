@@ -22,42 +22,14 @@ def register_callbacks(app):
 
     # Load time machine models and data
     try:
-        # Get the absolute path of the directory containing this script
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        model_files = {
-            'win_loss_model.pkl': None,
-            'point_diff_model.pkl': None,
-            'team_season_profiles.pkl': None
-        }
-        
-        for model_name in model_files.keys():
-            # Try multiple possible locations for the model files
-            possible_paths = [
-                os.path.join(base_dir, model_name),  # Same directory as script
-                os.path.join(base_dir, '..', model_name),  # Parent directory
-            ]
+        # Load models from root directory
+        with open('win_loss_model.pkl', 'rb') as f:
+            win_loss_model = pickle.load(f)
+        with open('point_diff_model.pkl', 'rb') as f:
+            point_diff_model = pickle.load(f)
+        with open('team_season_profiles.pkl', 'rb') as f:
+            team_profiles = pickle.load(f)
             
-            model_loaded = False
-            for path in possible_paths:
-                if os.path.exists(path):
-                    logger.info(f"Loading model from: {path}")
-                    try:
-                        with open(path, 'rb') as f:
-                            model_files[model_name] = pickle.load(f)
-                        model_loaded = True
-                        break
-                    except Exception as e:
-                        logger.error(f"Error loading {model_name} from {path}: {str(e)}")
-                        continue
-            
-            if not model_loaded:
-                raise FileNotFoundError(f"Could not find or load {model_name} in any of the expected locations: {possible_paths}")
-                
-        win_loss_model = model_files['win_loss_model.pkl']
-        point_diff_model = model_files['point_diff_model.pkl']
-        team_profiles = model_files['team_season_profiles.pkl']
-        
         print("Successfully loaded all model files")
         
     except Exception as e:
