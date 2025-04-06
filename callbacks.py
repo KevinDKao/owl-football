@@ -5,6 +5,7 @@ from dash import html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 import json
 import pickle
+import os
 from helper import time_machine_compare
 from data import load_data
 
@@ -16,12 +17,28 @@ def register_callbacks(app):
 
     # Load time machine models and data
     try:
-        with open('win_loss_model.pkl', 'rb') as f:
-            win_loss_model = pickle.load(f)
-        with open('point_diff_model.pkl', 'rb') as f:
-            point_diff_model = pickle.load(f)
-        with open('team_season_profiles.pkl', 'rb') as f:
-            team_profiles = pickle.load(f)
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        
+        # Check if model files exist
+        model_files = {
+            'win_loss_model.pkl': None,
+            'point_diff_model.pkl': None,
+            'team_season_profiles.pkl': None
+        }
+        
+        for model_file in model_files.keys():
+            file_path = os.path.join(base_path, model_file)
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"Model file {model_file} not found at {file_path}")
+            with open(file_path, 'rb') as f:
+                model_files[model_file] = pickle.load(f)
+                
+        win_loss_model = model_files['win_loss_model.pkl']
+        point_diff_model = model_files['point_diff_model.pkl']
+        team_profiles = model_files['team_season_profiles.pkl']
+        
+        print("Successfully loaded all model files")
+        
     except Exception as e:
         print(f"Error loading time machine models: {str(e)}")
         win_loss_model = None
