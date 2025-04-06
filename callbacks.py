@@ -26,11 +26,15 @@ def register_callbacks(app):
     # Load time machine models and data
     try:
         # Load models from root directory
-        with open('/app/win_loss_model.pkl', 'rb') as f:
+        win_loss_path = os.path.join(current_dir, "data", "win_loss_model.pkl")
+        point_diff_path = os.path.join(current_dir, "data", "point_diff_model.pkl")
+        team_profiles_path = os.path.join(current_dir, "data", "team_season_profiles.pkl")
+        
+        with open(win_loss_path, 'rb') as f:
             win_loss_model = pickle.load(f)
-        with open('/app/point_diff_model.pkl', 'rb') as f:
+        with open(point_diff_path, 'rb') as f:
             point_diff_model = pickle.load(f)
-        with open('/app/team_season_profiles.pkl', 'rb') as f:
+        with open(team_profiles_path, 'rb') as f:
             team_profiles = pickle.load(f)
         
         print("Successfully loaded all model files")
