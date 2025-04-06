@@ -10,10 +10,13 @@ import traceback
 from helper import time_machine_compare
 from data import load_data
 import logging
+from pathlib import Path
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def register_callbacks(app):
     """
@@ -23,11 +26,11 @@ def register_callbacks(app):
     # Load time machine models and data
     try:
         # Load models from root directory
-        with open('app/win_loss_model.pkl', 'rb') as f:
+        with open(os.path.join(current_dir, "win_loss_model.pkl"), "rb") as f:
             win_loss_model = pickle.load(f)
-        with open('app/point_diff_model.pkl', 'rb') as f:
+        with open(os.path.join(current_dir, "point_diff_model.pkl"), "rb") as f:
             point_diff_model = pickle.load(f)
-        with open('app/team_season_profiles.pkl', 'rb') as f:
+        with open(os.path.join(current_dir, "team_season_profiles.pkl"), "rb") as f:
             team_profiles = pickle.load(f)
             
         print("Successfully loaded all model files")
