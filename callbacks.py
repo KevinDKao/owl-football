@@ -182,7 +182,7 @@ def register_callbacks(app):
     def update_player_cards(position_filter, school_filter, draft_status_filter):
         """Update the player cards based on filters"""
         # Load the draft predictions data
-        df = pd.read_csv("cache.csv")
+        df = pd.read_csv("/app/cache.csv")
         
         # Convert height from inches to feet and inches
         def convert_height(height):
