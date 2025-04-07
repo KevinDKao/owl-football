@@ -1,8 +1,8 @@
-FROM python:3.11-slim
+FROM python:3.9-slim
 
 # Set environment variables
-ENV PYTHONUNBUFFERED True
-ENV APP_HOME /app
+ENV PYTHONUNBUFFERED=True
+ENV APP_HOME=/app
 
 # Set working directory
 WORKDIR $APP_HOME
@@ -21,5 +21,4 @@ COPY . .
 ENV PORT=8080
 
 # Command to run the application
-# Uses module import style to match your normal running method
-CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 "app:server"
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "0", "app:server"]

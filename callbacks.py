@@ -4,7 +4,7 @@ import dash
 from dash import html, dcc, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 import json
-import pickle
+import joblib
 import os
 import traceback
 from helper import time_machine_compare
@@ -26,16 +26,13 @@ def register_callbacks(app):
     # Load time machine models and data
     try:
         # Load models from root directory
-        win_loss_path = os.path.join(current_dir, "win_loss_model.pkl")
-        point_diff_path = os.path.join(current_dir,"point_diff_model.pkl")
-        team_profiles_path = os.path.join(current_dir, "team_season_profiles.pkl")
+        win_loss_path = os.path.join(current_dir, "win_loss_model.joblib")
+        point_diff_path = os.path.join(current_dir,"point_diff_model.joblib")
+        team_profiles_path = os.path.join(current_dir, "team_season_profiles.joblib")
         
-        with open(win_loss_path, 'rb') as f:
-            win_loss_model = pickle.load(f)
-        with open(point_diff_path, 'rb') as f:
-            point_diff_model = pickle.load(f)
-        with open(team_profiles_path, 'rb') as f:
-            team_profiles = pickle.load(f)
+        win_loss_model = joblib.load(win_loss_path)
+        point_diff_model = joblib.load(point_diff_path)
+        team_profiles = joblib.load(team_profiles_path)
         
         print("Successfully loaded all model files")
         
