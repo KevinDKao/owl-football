@@ -26,9 +26,9 @@ def register_callbacks(app):
     # Load time machine models and data
     try:
         # Load models from root directory
-        win_loss_path = os.path.join(current_dir, "data", "win_loss_model.pkl")
-        point_diff_path = os.path.join(current_dir, "data", "point_diff_model.pkl")
-        team_profiles_path = os.path.join(current_dir, "data", "team_season_profiles.pkl")
+        win_loss_path = os.path.join(current_dir, "win_loss_model.pkl")
+        point_diff_path = os.path.join(current_dir,"point_diff_model.pkl")
+        team_profiles_path = os.path.join(current_dir, "team_season_profiles.pkl")
         
         with open(win_loss_path, 'rb') as f:
             win_loss_model = pickle.load(f)
@@ -182,7 +182,7 @@ def register_callbacks(app):
     def update_player_cards(position_filter, school_filter, draft_status_filter):
         """Update the player cards based on filters"""
         # Load the draft predictions data
-        df = pd.read_csv("/app/cache.csv")
+        df = pd.read_csv("cache.csv")
         
         # Convert height from inches to feet and inches
         def convert_height(height):
