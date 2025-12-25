@@ -7,6 +7,10 @@ import json
 import joblib
 import os
 import traceback
+
+# Import sklearn compatibility shim BEFORE loading models
+import sklearn_compat
+
 from helper import time_machine_compare
 from data import load_data
 import logging
@@ -25,28 +29,43 @@ def register_callbacks(app):
 
     # Load time machine models and data
     try:
-        # Load models from root directory
-        win_loss_path = os.path.join(current_dir, "win_loss_model.joblib")
-        point_diff_path = os.path.join(current_dir,"point_diff_model.joblib")
-        team_profiles_path = os.path.join(current_dir, "team_season_profiles.joblib")
+        import pickle
         
-        win_loss_model = joblib.load(win_loss_path)
-        point_diff_model = joblib.load(point_diff_path)
-        team_profiles = joblib.load(team_profiles_path)
+        # Try loading .pkl files first (may have better compatibility)
+        win_loss_path_pkl = os.path.join(current_dir, "win_loss_model.pkl")
+        point_diff_path_pkl = os.path.join(current_dir, "point_diff_model.pkl")
+        team_profiles_path_pkl = os.path.join(current_dir, "team_season_profiles.pkl")
         
-        print("Successfully loaded all model files")
+        # Fallback to .joblib files
+        win_loss_path_joblib = os.path.join(current_dir, "win_loss_model.joblib")
+        point_diff_path_joblib = os.path.join(current_dir,"point_diff_model.joblib")
+        team_profiles_path_joblib = os.path.join(current_dir, "team_season_profiles.joblib")
+        
+        # Try .pkl files first
+        try:
+            with open(win_loss_path_pkl, 'rb') as f:
+                win_loss_model = pickle.load(f)
+            with open(point_diff_path_pkl, 'rb') as f:
+                point_diff_model = pickle.load(f)
+            with open(team_profiles_path_joblib, 'rb') as f:  # This one is just data, should work
+                team_profiles = joblib.load(f)
+            print("Successfully loaded models from .pkl files")
+        except Exception as pkl_error:
+            print(f"Failed to load .pkl files: {pkl_error}")
+            print("Trying .joblib files...")
+            win_loss_model = joblib.load(win_loss_path_joblib)
+            point_diff_model = joblib.load(point_diff_path_joblib)
+            team_profiles = joblib.load(team_profiles_path_joblib)
+            print("Successfully loaded models from .joblib files")
         
     except Exception as e:
         print(f"Error loading time machine models: {str(e)}")
         print("Traceback:")
         print(traceback.format_exc())
+        print("App will continue without time machine functionality.")
         win_loss_model = None
         point_diff_model = None
         team_profiles = None
-        return html.Div(
-            f"Error: Time machine models not loaded. Reason: {str(e)}",
-            className="alert alert-danger"
-        )
 
     @app.callback(
         Output("time-machine-results", "children"),
@@ -65,7 +84,7 @@ def register_callbacks(app):
 
         if not all([win_loss_model, point_diff_model, team_profiles]):
             return html.Div(
-                f"Error: Time machine models not loaded. Reason: {str(e)}",
+                "Error: Time machine models not loaded. The models are incompatible with the current scikit-learn version.",
                 className="alert alert-danger"
             )
 
